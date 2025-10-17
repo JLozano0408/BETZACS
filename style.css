@@ -1,0 +1,60 @@
+body {
+    font-family: 'Poppins', sans-serif;
+}
+.bg-primary { background-color: #5F6F52; }
+.text-primary { color: #5F6F52; }
+.border-primary { border-color: #5F6F52; }
+.ring-primary { --tw-ring-color: #5F6F52; }
+.bg-accent { background-color: #C73861; }
+.text-accent { color: #C73861; }
+.text-dark { color: #424242; }
+.bg-light-gray { background-color: #F5F5F5; }
+.active-nav {
+    color: #5F6F52;
+    background-color: #f0f2f5;
+}
+.dark .active-nav {
+     color: #5F6F52;
+     background-color: #374151;
+}
+.hover\:bg-primary-dark:hover { background-color: #4A5541; }
+.hover\:bg-accent-dark:hover { background-color: #A62B50; }
+/* Toggle Switch styling */
+.toggle-checkbox:checked {
+    @apply: right-0 border-primary;
+    right: 0;
+    border-color: #5F6F52;
+}
+.toggle-checkbox:checked + .toggle-label {
+    @apply: bg-primary;
+    background-color: #5F6F52;
+}
+/* Hide number input arrows */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type=number] {
+    -moz-appearance: textfield;
+}
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    padding: 2px 6px;
+    border-radius: 50%;
+    background: red;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+}
+.unpaid-dot {
+    height: 8px;
+    width: 8px;
+    background-color: red;
+    border-radius: 50%;
+    display: inline-block;
+    margin-left: 8px;
+}
+
