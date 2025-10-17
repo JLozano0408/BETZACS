@@ -63,22 +63,89 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- DATA & STATE ---
     let users = {
-        1: { id: 1, username: 'betza', password: 'password', role: 'admin', hourlyWage: 0 }
+        1: { id: 1, username: 'Betza', password: 'password', role: 'admin', hourlyWage: 0 }
     };
     let clients = {};
     let nextClientId = 1;
     let nextUserId = 2;
     let nextJobId = 1;
-    
     let schedule = [];
     let timesheets = {};
     let payAdjustments = {};
-
     let currentUser = null;
     let clockInTime = null;
     let shiftTimerInterval = null;
     let itemToDelete = { type: null, id: null };
     
+    // --- CORE & HELPER FUNCTIONS ---
+    
+    // Helper to get today's date in YYYY-MM-DD format using the local timezone
+    const getTodayString = () => {
+        const today = new Date();
+        const offset = today.getTimezoneOffset();
+        const localToday = new Date(today.getTime() - (offset * 60 * 1000));
+        return localToday.toISOString().split('T')[0];
+    };
+    
+    // --- DATA PERSISTENCE ---
+    function saveData() {
+        localStorage.setItem('betzaAppUsers', JSON.stringify(users));
+        localStorage.setItem('betzaAppClients', JSON.stringify(clients));
+        localStorage.setItem('betzaAppSchedule', JSON.stringify(schedule));
+        localStorage.setItem('betzaAppTimesheets', JSON.stringify(timesheets));
+        localStorage.setItem('betzaAppPayAdjustments', JSON.stringify(payAdjustments));
+    }
+
+    function loadData() {
+        try {
+            const savedUsers = localStorage.getItem('betzaAppUsers');
+            if (savedUsers) {
+                users = JSON.parse(savedUsers);
+                nextUserId = Object.keys(users).length > 0 ? Math.max(...Object.keys(users).map(Number)) + 1 : 1;
+            }
+        } catch (e) {
+            console.error("Error loading users data:", e);
+        }
+        
+        try {
+            const savedClients = localStorage.getItem('betzaAppClients');
+            if (savedClients) {
+                clients = JSON.parse(savedClients);
+                nextClientId = Object.keys(clients).length > 0 ? Math.max(...Object.keys(clients).map(Number)) + 1 : 1;
+            }
+        } catch (e) {
+            console.error("Error loading clients data:", e);
+        }
+        
+        try {
+            const savedSchedule = localStorage.getItem('betzaAppSchedule');
+            if (savedSchedule) {
+                schedule = JSON.parse(savedSchedule);
+                nextJobId = schedule.length > 0 ? Math.max(...schedule.map(j => j.id)) + 1 : 1;
+            }
+        } catch (e) {
+            console.error("Error loading schedule data:", e);
+        }
+        
+        try {
+            const savedTimesheets = localStorage.getItem('betzaAppTimesheets');
+            if (savedTimesheets) {
+                timesheets = JSON.parse(savedTimesheets);
+            }
+        } catch (e) {
+            console.error("Error loading timesheets data:", e);
+        }
+        
+        try {
+            const savedPayAdjustments = localStorage.getItem('betzaAppPayAdjustments');
+            if (savedPayAdjustments) {
+                payAdjustments = JSON.parse(savedPayAdjustments);
+            }
+        } catch (e) {
+            console.error("Error loading pay adjustments data:", e);
+        }
+    }
+
     // --- TRANSLATIONS & SETTINGS ---
     const translations = {
         en: {
@@ -162,18 +229,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     let currentLang = 'en';
     let currentTheme = 'light';
-
-    // --- CORE & HELPER FUNCTIONS ---
-
-    const openModal = (modalElement) => modalElement?.classList.remove('hidden');
-    const closeModal = (modalElement) => modalElement?.classList.add('hidden');
-
-    const getTodayString = () => {
-        const today = new Date();
-        const offset = today.getTimezoneOffset();
-        const localToday = new Date(today.getTime() - (offset * 60 * 1000));
-        return localToday.toISOString().split('T')[0];
-    };
 
     function showInfoModal(titleKey, messageKey) {
         infoModalTitle.textContent = translations[currentLang][titleKey] || titleKey;
@@ -1327,7 +1382,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function resetAllPasswordFields() {
         document.querySelectorAll('.password-toggle-btn').forEach(button => {
-            const input = button.previousElementSibling;
+            const input = button.closest('.relative')?.querySelector('input');
             const icon = button.querySelector('i');
             if (input && input.type === 'text') {
                 input.type = 'password';
@@ -1338,8 +1393,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function togglePasswordVisibility(button) {
-        const input = button.previousElementSibling;
+        const input = button.closest('.relative')?.querySelector('input');
         const icon = button.querySelector('i');
+        if (!input) return;
         if (input.type === 'password') {
             input.type = 'text';
             icon.classList.remove('fa-eye');
@@ -1468,6 +1524,7 @@ document.addEventListener('DOMContentLoaded', () => {
     importContactBtn.addEventListener('click', handleImportContact);
 
     // --- Init Call ---
+    loadData();
     loadSettings();
 });
 
