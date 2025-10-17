@@ -1,4 +1,3 @@
-// This script should be in a file named `script.js`
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM ELEMENTS (declared with const for safety) ---
     const loginScreen = document.getElementById('login-screen');
@@ -64,92 +63,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- DATA & STATE ---
     let users = {
-        1: { id: 1, username: 'Betza', password: 'password', role: 'admin', hourlyWage: 0 }
+        1: { id: 1, username: 'betza', password: 'password', role: 'admin', hourlyWage: 0 }
     };
     let clients = {};
     let nextClientId = 1;
     let nextUserId = 2;
     let nextJobId = 1;
+    
     let schedule = [];
     let timesheets = {};
     let payAdjustments = {};
+
     let currentUser = null;
     let clockInTime = null;
     let shiftTimerInterval = null;
     let itemToDelete = { type: null, id: null };
     
-    // --- CORE & HELPER FUNCTIONS ---
-    
-    const openModal = (modalElement) => modalElement?.classList.remove('hidden');
-    const closeModal = (modalElement) => modalElement?.classList.add('hidden');
-
-    // Helper to get today's date in YYYY-MM-DD format using the local timezone
-    const getTodayString = () => {
-        const today = new Date();
-        const offset = today.getTimezoneOffset();
-        const localToday = new Date(today.getTime() - (offset * 60 * 1000));
-        return localToday.toISOString().split('T')[0];
-    };
-    
-    // --- DATA PERSISTENCE ---
-    function saveData() {
-        localStorage.setItem('betzaAppUsers', JSON.stringify(users));
-        localStorage.setItem('betzaAppClients', JSON.stringify(clients));
-        localStorage.setItem('betzaAppSchedule', JSON.stringify(schedule));
-        localStorage.setItem('betzaAppTimesheets', JSON.stringify(timesheets));
-        localStorage.setItem('betzaAppPayAdjustments', JSON.stringify(payAdjustments));
-    }
-
-    function loadData() {
-        try {
-            const savedUsers = localStorage.getItem('betzaAppUsers');
-            if (savedUsers) {
-                users = JSON.parse(savedUsers);
-                nextUserId = Object.keys(users).length > 0 ? Math.max(...Object.keys(users).map(Number)) + 1 : 1;
-            }
-        } catch (e) {
-            console.error("Error loading users data:", e);
-        }
-        
-        try {
-            const savedClients = localStorage.getItem('betzaAppClients');
-            if (savedClients) {
-                clients = JSON.parse(savedClients);
-                nextClientId = Object.keys(clients).length > 0 ? Math.max(...Object.keys(clients).map(Number)) + 1 : 1;
-            }
-        } catch (e) {
-            console.error("Error loading clients data:", e);
-        }
-        
-        try {
-            const savedSchedule = localStorage.getItem('betzaAppSchedule');
-            if (savedSchedule) {
-                schedule = JSON.parse(savedSchedule);
-                nextJobId = schedule.length > 0 ? Math.max(...schedule.map(j => j.id)) + 1 : 1;
-            }
-        } catch (e) {
-            console.error("Error loading schedule data:", e);
-        }
-        
-        try {
-            const savedTimesheets = localStorage.getItem('betzaAppTimesheets');
-            if (savedTimesheets) {
-                timesheets = JSON.parse(savedTimesheets);
-            }
-        } catch (e) {
-            console.error("Error loading timesheets data:", e);
-        }
-        
-        try {
-            const savedPayAdjustments = localStorage.getItem('betzaAppPayAdjustments');
-            if (savedPayAdjustments) {
-                payAdjustments = JSON.parse(savedPayAdjustments);
-            }
-        } catch (e) {
-            console.error("Error loading pay adjustments data:", e);
-        }
-    }
-
     // --- TRANSLATIONS & SETTINGS ---
     const translations = {
         en: {
@@ -233,6 +162,18 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     let currentLang = 'en';
     let currentTheme = 'light';
+
+    // --- CORE & HELPER FUNCTIONS ---
+
+    const openModal = (modalElement) => modalElement?.classList.remove('hidden');
+    const closeModal = (modalElement) => modalElement?.classList.add('hidden');
+
+    const getTodayString = () => {
+        const today = new Date();
+        const offset = today.getTimezoneOffset();
+        const localToday = new Date(today.getTime() - (offset * 60 * 1000));
+        return localToday.toISOString().split('T')[0];
+    };
 
     function showInfoModal(titleKey, messageKey) {
         infoModalTitle.textContent = translations[currentLang][titleKey] || titleKey;
@@ -873,7 +814,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function openClientModal(clientId = null) {
         clientForm.reset();
-        importContactBtn.classList.add('hidden');
         if ('contacts' in navigator && 'select' in navigator.contacts) {
             importContactBtn.classList.remove('hidden');
         }
@@ -907,7 +847,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const newId = nextClientId++;
             clients[newId] = { id: newId, ...clientData };
         }
-        saveData();
         renderClients();
         populateClientDropdown();
         closeModal(clientModal);
@@ -946,7 +885,6 @@ document.addEventListener('DOMContentLoaded', () => {
             payAdjustments[nextUserId] = { vehicleUsageEnabled: false, vehicleUsageAmount: 0 };
         }
         nextUserId++;
-        saveData();
         renderUsers();
         populateEmployeeDropdowns();
         addUserForm.reset();
@@ -980,7 +918,6 @@ document.addEventListener('DOMContentLoaded', () => {
             stopTimer();
             localStorage.removeItem('clockedInData');
             updateClockButtonState();
-            saveData();
             renderTimeAndPay();
         } else {
             clockInTime = new Date();
@@ -1041,7 +978,6 @@ document.addEventListener('DOMContentLoaded', () => {
             schedule.push({ id: nextJobId++, ...jobData, isPaid: false });
         }
 
-        saveData();
         renderSchedule();
         updateUnpaidIndicators();
         closeModal(addJobModal);
@@ -1087,7 +1023,6 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
         
-        saveData();
         cardBody.querySelector('.save-user-changes-btn').classList.add('hidden');
         const status = cardBody.querySelector('.save-status');
         status.classList.remove('hidden');
@@ -1153,7 +1088,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderClients();
             populateClientDropdown();
         }
-        saveData();
         closeModal(confirmDeleteModal);
         itemToDelete = { type: null, id: null };
     }
@@ -1179,7 +1113,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             timesheets[selectedUserId][index] = newEntry;
         }
-        saveData();
         renderTimeAndPay();
         closeModal(timesheetEditModal);
     }
@@ -1212,7 +1145,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         users[userId].password = p1.value;
-        saveData();
         feedback.textContent = translations[currentLang].password_success;
         feedback.className = 'text-sm text-center mt-4 text-green-600';
         setTimeout(() => {
@@ -1264,7 +1196,7 @@ document.addEventListener('DOMContentLoaded', () => {
             job.paymentDate = new Date().toLocaleDateString();
             
             closeModal(paymentMethodModal);
-            saveData();
+
             renderSchedule();
             updateUnpaidIndicators();
             renderEarnings();
@@ -1357,7 +1289,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         users[currentUser.id].password = p1.value;
-        saveData();
         feedback.textContent = translations[currentLang].password_success;
         feedback.className = 'text-sm text-center mt-2 text-green-600';
         p1.value = ''; p2.value = '';
@@ -1383,7 +1314,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 job.isPaid = false;
                 job.paymentMethod = null;
                 job.paymentDate = null;
-                saveData();
                 renderSchedule();
                 updateUnpaidIndicators();
                 renderEarnings();
@@ -1397,7 +1327,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function resetAllPasswordFields() {
         document.querySelectorAll('.password-toggle-btn').forEach(button => {
-            const input = button.closest('.relative')?.querySelector('input');
+            const input = button.previousElementSibling;
             const icon = button.querySelector('i');
             if (input && input.type === 'text') {
                 input.type = 'password';
@@ -1408,9 +1338,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function togglePasswordVisibility(button) {
-        const input = button.closest('.relative')?.querySelector('input');
+        const input = button.previousElementSibling;
         const icon = button.querySelector('i');
-        if (!input) return;
         if (input.type === 'password') {
             input.type = 'text';
             icon.classList.remove('fa-eye');
@@ -1539,11 +1468,6 @@ document.addEventListener('DOMContentLoaded', () => {
     importContactBtn.addEventListener('click', handleImportContact);
 
     // --- Init Call ---
-    loadData();
     loadSettings();
 });
-
-</script>
-</body>
-</html>
 
