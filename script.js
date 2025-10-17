@@ -1,3 +1,4 @@
+// This script should be in a file named `script.js`
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM ELEMENTS (declared with const for safety) ---
     const loginScreen = document.getElementById('login-screen');
@@ -79,6 +80,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- CORE & HELPER FUNCTIONS ---
     
+    const openModal = (modalElement) => modalElement?.classList.remove('hidden');
+    const closeModal = (modalElement) => modalElement?.classList.add('hidden');
+
     // Helper to get today's date in YYYY-MM-DD format using the local timezone
     const getTodayString = () => {
         const today = new Date();
@@ -869,6 +873,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function openClientModal(clientId = null) {
         clientForm.reset();
+        importContactBtn.classList.add('hidden');
         if ('contacts' in navigator && 'select' in navigator.contacts) {
             importContactBtn.classList.remove('hidden');
         }
@@ -902,6 +907,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const newId = nextClientId++;
             clients[newId] = { id: newId, ...clientData };
         }
+        saveData();
         renderClients();
         populateClientDropdown();
         closeModal(clientModal);
@@ -940,6 +946,7 @@ document.addEventListener('DOMContentLoaded', () => {
             payAdjustments[nextUserId] = { vehicleUsageEnabled: false, vehicleUsageAmount: 0 };
         }
         nextUserId++;
+        saveData();
         renderUsers();
         populateEmployeeDropdowns();
         addUserForm.reset();
@@ -973,6 +980,7 @@ document.addEventListener('DOMContentLoaded', () => {
             stopTimer();
             localStorage.removeItem('clockedInData');
             updateClockButtonState();
+            saveData();
             renderTimeAndPay();
         } else {
             clockInTime = new Date();
@@ -1033,6 +1041,7 @@ document.addEventListener('DOMContentLoaded', () => {
             schedule.push({ id: nextJobId++, ...jobData, isPaid: false });
         }
 
+        saveData();
         renderSchedule();
         updateUnpaidIndicators();
         closeModal(addJobModal);
@@ -1078,6 +1087,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
         
+        saveData();
         cardBody.querySelector('.save-user-changes-btn').classList.add('hidden');
         const status = cardBody.querySelector('.save-status');
         status.classList.remove('hidden');
@@ -1143,6 +1153,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderClients();
             populateClientDropdown();
         }
+        saveData();
         closeModal(confirmDeleteModal);
         itemToDelete = { type: null, id: null };
     }
@@ -1168,6 +1179,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             timesheets[selectedUserId][index] = newEntry;
         }
+        saveData();
         renderTimeAndPay();
         closeModal(timesheetEditModal);
     }
@@ -1200,6 +1212,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         users[userId].password = p1.value;
+        saveData();
         feedback.textContent = translations[currentLang].password_success;
         feedback.className = 'text-sm text-center mt-4 text-green-600';
         setTimeout(() => {
@@ -1251,7 +1264,7 @@ document.addEventListener('DOMContentLoaded', () => {
             job.paymentDate = new Date().toLocaleDateString();
             
             closeModal(paymentMethodModal);
-
+            saveData();
             renderSchedule();
             updateUnpaidIndicators();
             renderEarnings();
@@ -1344,6 +1357,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         users[currentUser.id].password = p1.value;
+        saveData();
         feedback.textContent = translations[currentLang].password_success;
         feedback.className = 'text-sm text-center mt-2 text-green-600';
         p1.value = ''; p2.value = '';
@@ -1369,6 +1383,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 job.isPaid = false;
                 job.paymentMethod = null;
                 job.paymentDate = null;
+                saveData();
                 renderSchedule();
                 updateUnpaidIndicators();
                 renderEarnings();
@@ -1527,4 +1542,8 @@ document.addEventListener('DOMContentLoaded', () => {
     loadData();
     loadSettings();
 });
+
+</script>
+</body>
+</html>
 
