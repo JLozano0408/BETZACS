@@ -58,21 +58,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsManageUsersBtn = document.getElementById('settings-manage-users-btn');
     const weekSelect = document.getElementById('week-select');
     const adminWeekSelect = document.getElementById('admin-week-select');
-    const importContactBtn = document.getElementById('import-contact-btn');
 
 
     // --- DATA & STATE ---
-    let users = {
-        1: { id: 1, username: 'betza', password: 'password', role: 'admin', hourlyWage: 0 }
-    };
-    let clients = {};
-    let nextClientId = 1;
-    let nextUserId = 2;
-    let nextJobId = 1;
-    
-    let schedule = [];
-    let timesheets = {};
-    let payAdjustments = {};
+    let users, clients, nextClientId, nextUserId, nextJobId, schedule, timesheets, payAdjustments;
 
     let currentUser = null;
     let clockInTime = null;
@@ -118,7 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
             payroll: "Payroll",
             net_income: "Net Income",
             completed_jobs: "Completed Jobs",
-            import_contact: "Import from Contacts",
         },
         es: {
             schedule: 'Horario', clients: 'Clientes', time_pay: 'Planilla y Paga', earnings: 'Ganancias', settings: 'Ajustes',
@@ -157,13 +145,52 @@ document.addEventListener('DOMContentLoaded', () => {
             payroll: "Nómina",
             net_income: "Ingreso Neto",
             completed_jobs: "Trabajos Completados",
-            import_contact: "Importar de Contactos",
         }
     };
     let currentLang = 'en';
     let currentTheme = 'light';
 
     // --- CORE & HELPER FUNCTIONS ---
+
+    function saveState() {
+        const appState = {
+            users,
+            clients,
+            nextClientId,
+            nextUserId,
+            nextJobId,
+            schedule,
+            timesheets,
+            payAdjustments
+        };
+        localStorage.setItem('betzaAppState', JSON.stringify(appState));
+    }
+
+    function initData() {
+        const savedState = localStorage.getItem('betzaAppState');
+        if (savedState) {
+            const appState = JSON.parse(savedState);
+            users = appState.users;
+            clients = appState.clients;
+            nextClientId = appState.nextClientId;
+            nextUserId = appState.nextUserId;
+            nextJobId = appState.nextJobId;
+            schedule = appState.schedule;
+            timesheets = appState.timesheets;
+            payAdjustments = appState.payAdjustments;
+        } else {
+            users = {
+                1: { id: 1, username: 'Betza', password: 'password', role: 'admin', hourlyWage: 0 }
+            };
+            clients = {};
+            nextClientId = 1;
+            nextUserId = 2;
+            nextJobId = 1;
+            schedule = [];
+            timesheets = {};
+            payAdjustments = {};
+        }
+    }
 
     const openModal = (modalElement) => modalElement?.classList.remove('hidden');
     const closeModal = (modalElement) => modalElement?.classList.add('hidden');
@@ -782,41 +809,8 @@ document.addEventListener('DOMContentLoaded', () => {
         openModal(clientDetailsModal);
     }
     
-    async function handleImportContact() {
-        try {
-            const props = ['name', 'tel', 'address'];
-            const contacts = await navigator.contacts.select(props, { multiple: false });
-            if (contacts.length) {
-                const contact = contacts[0];
-                if (contact.name && contact.name.length) {
-                    document.getElementById('client-name').value = contact.name[0];
-                }
-                if (contact.tel && contact.tel.length) {
-                    document.getElementById('client-phone').value = contact.tel[0];
-                }
-                if (contact.address && contact.address.length) {
-                    const address = contact.address[0];
-                    const addressParts = [
-                        ...(address.addressLine || []),
-                        address.city,
-                        address.region,
-                        address.postalCode,
-                        address.country
-                    ].filter(Boolean);
-                    document.getElementById('client-address').value = addressParts.join(', ');
-                }
-            }
-        } catch (ex) {
-            console.error("Error importing contact.", ex);
-            showInfoModal('Error', 'Could not import contact information.');
-        }
-    }
-    
     function openClientModal(clientId = null) {
         clientForm.reset();
-        if ('contacts' in navigator && 'select' in navigator.contacts) {
-            importContactBtn.classList.remove('hidden');
-        }
         document.getElementById('client-id').value = clientId || '';
         if(clientId) {
             const client = clients[clientId];
@@ -850,6 +844,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderClients();
         populateClientDropdown();
         closeModal(clientModal);
+        saveState();
     }
 
     function handleDeleteClientClick(e) {
@@ -889,6 +884,7 @@ document.addEventListener('DOMContentLoaded', () => {
         populateEmployeeDropdowns();
         addUserForm.reset();
         addUserContainer.classList.add('hidden');
+        saveState();
     }
 
     function populateEmployeeDropdowns() {
@@ -925,6 +921,7 @@ document.addEventListener('DOMContentLoaded', () => {
             startTimer();
             updateClockButtonState();
         }
+        saveState();
     }
 
     function startTimer() {
@@ -982,6 +979,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateUnpaidIndicators();
         closeModal(addJobModal);
         addJobForm.reset();
+        saveState();
     }
 
     function showSaveButton(event) {
@@ -1036,6 +1034,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (document.getElementById('employee-select-time-pay').value === userId) {
             renderTimeAndPay(userId);
         }
+        saveState();
     }
 
     function handleDeleteUserClick(event) {
@@ -1090,6 +1089,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         closeModal(confirmDeleteModal);
         itemToDelete = { type: null, id: null };
+        saveState();
     }
 
     function handleSaveTimesheetOverride(event) {
@@ -1115,6 +1115,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         renderTimeAndPay();
         closeModal(timesheetEditModal);
+        saveState();
     }
 
     function handleResetPasswordClick(event) {
@@ -1151,6 +1152,7 @@ document.addEventListener('DOMContentLoaded', () => {
             closeModal(passwordResetModal);
             passwordResetForm.reset();
         }, 2000);
+        saveState();
     }
 
     function handleEditJobClick(e) {
@@ -1208,6 +1210,7 @@ document.addEventListener('DOMContentLoaded', () => {
              closeModal(paymentMethodModal);
         }
         document.getElementById('payment-origin').value = '';
+        saveState();
     }
 
     function updateUnpaidIndicators() {
@@ -1293,6 +1296,7 @@ document.addEventListener('DOMContentLoaded', () => {
         feedback.className = 'text-sm text-center mt-2 text-green-600';
         p1.value = ''; p2.value = '';
         setTimeout(() => feedback.textContent = '', 3000);
+        saveState();
     }
     
     function formatPhoneNumber(e) {
@@ -1322,6 +1326,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('payment-origin').value = 'schedule';
                 openModal(paymentMethodModal);
             }
+            saveState();
         }
     }
     
@@ -1465,9 +1470,7 @@ document.addEventListener('DOMContentLoaded', () => {
     weekSelect.addEventListener('change', () => renderTimeAndPay());
     adminWeekSelect.addEventListener('change', () => renderTimeAndPay());
     
-    importContactBtn.addEventListener('click', handleImportContact);
-
     // --- Init Call ---
+    initData();
     loadSettings();
 });
-

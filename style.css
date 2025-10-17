@@ -21,12 +21,10 @@ body {
 .hover\:bg-accent-dark:hover { background-color: #A62B50; }
 /* Toggle Switch styling */
 .toggle-checkbox:checked {
-    @apply: right-0 border-primary;
     right: 0;
     border-color: #5F6F52;
 }
 .toggle-checkbox:checked + .toggle-label {
-    @apply: bg-primary;
     background-color: #5F6F52;
 }
 /* Hide number input arrows */
