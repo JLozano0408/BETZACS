@@ -123,6 +123,9 @@
                 <!-- Clients Screen Content -->
                 <div id="clients-content" class="hidden">
                     <div id="admin-clients-view" class="hidden">
+                        <div class="mb-4">
+                            <input type="search" id="client-search-input" placeholder="Search clients..." class="w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                        </div>
                         <div class="flex justify-end items-center mb-4">
                             <button id="add-client-btn" class="bg-primary text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-primary-dark transition duration-300"><i class="fas fa-address-book mr-2"></i><span data-translate-key="add_client">Add Client</span></button>
                         </div>
@@ -358,25 +361,44 @@
             </div>
         </div>
         
-        <div id="client-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden">
-             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm">
+        <div id="client-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm my-auto">
                   <h3 id="client-modal-title" class="text-xl font-bold text-dark dark:text-white mb-4">Add Client</h3>
-                  <form id="client-form">
+                  <form id="client-form" class="space-y-3">
                       <input type="hidden" id="client-id">
-                      <button type="button" id="import-contact-btn" class="hidden w-full px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 font-semibold mb-4"><i class="fas fa-address-book mr-2"></i><span data-translate-key="import_contact">Import from Contacts</span></button>
-                      <div class="mb-3">
+                      <div>
                            <label for="client-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-translate-key="client_name">Client Name</label>
                            <input type="text" id="client-name" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
                       </div>
-                      <div class="mb-3">
-                           <label for="client-address" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-translate-key="address">Address</label>
-                           <input type="text" id="client-address" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                      <div>
+                           <label for="client-address-street" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
+                           <input type="text" id="client-address-street" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
                       </div>
-                       <div class="mb-3">
+                      <div>
+                           <label for="client-address-apt" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Apt/Suit #</label>
+                           <input type="text" id="client-address-apt" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                      </div>
+                      <div class="grid grid-cols-2 gap-4">
+                          <div>
+                               <label for="client-address-city" class="block text-sm font-medium text-gray-700 dark:text-gray-300">City</label>
+                               <input type="text" id="client-address-city" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                          </div>
+                          <div>
+                               <label for="client-address-state" class="block text-sm font-medium text-gray-700 dark:text-gray-300">State</label>
+                               <select id="client-address-state" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                                    <option>CO</option><option>AL</option><option>AK</option><option>AZ</option><option>AR</option><option>CA</option><option>CT</option><option>DE</option><option>FL</option><option>GA</option><option>HI</option><option>ID</option><option>IL</option><option>IN</option><option>IA</option><option>KS</option><option>KY</option><option>LA</option><option>ME</option><option>MD</option><option>MA</option><option>MI</option><option>MN</option><option>MS</option><option>MO</option><option>MT</option><option>NE</option><option>NV</option><option>NH</option><option>NJ</option><option>NM</option><option>NY</option><option>NC</option><option>ND</option><option>OH</option><option>OK</option><option>OR</option><option>PA</option><option>RI</option><option>SC</option><option>SD</option><option>TN</option><option>TX</option><option>UT</option><option>VT</option><option>VA</option><option>WA</option><option>WV</option><option>WI</option><option>WY</option>
+                               </select>
+                          </div>
+                      </div>
+                       <div>
+                           <label for="client-address-zip" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Zip Code</label>
+                           <input type="text" id="client-address-zip" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                      </div>
+                       <div>
                            <label for="client-phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-translate-key="phone_number">Phone Number</label>
                            <input type="tel" id="client-phone" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
                       </div>
-                      <div class="mb-4">
+                      <div>
                            <label for="client-recurrence" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-translate-key="recurrence">Recurrence</label>
                            <select id="client-recurrence" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
                                 <option value="one-time" data-translate-key="recurrence_one_time">One Time</option>
@@ -386,7 +408,7 @@
                                 <option value="monthly" data-translate-key="recurrence_monthly">Monthly</option>
                            </select>
                       </div>
-                      <div class="flex justify-end space-x-2">
+                      <div class="flex justify-end space-x-2 pt-2">
                            <button type="button" id="cancel-client-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-white" data-translate-key="cancel">Cancel</button>
                            <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark" data-translate-key="save_client">Save Client</button>
                       </div>
@@ -394,39 +416,85 @@
              </div>
         </div>
 
-        <div id="add-job-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden">
-             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm">
+        <div id="add-job-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm my-auto">
                   <h3 id="add-job-modal-title" class="text-xl font-bold text-dark dark:text-white mb-4" data-translate-key="add_new_job_title">Add New Job</h3>
-                  <form id="add-job-form">
+                  <form id="add-job-form" class="space-y-3">
                       <input type="hidden" id="job-id">
-                       <div class="mb-4">
-                           <label for="job-client-select" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-translate-key="select_client">Select Client</label>
-                           <select id="job-client-select" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
-                                <!-- JS will populate -->
-                           </select>
+                       <div class="relative">
+                           <label for="job-client-search" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-translate-key="select_client">Select Client</label>
+                           <input type="text" id="job-client-search" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" placeholder="Type to search...">
+                           <div id="job-client-suggestions" class="absolute z-10 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md mt-1 hidden max-h-48 overflow-y-auto"></div>
+                           <input type="hidden" id="job-client-id">
                        </div>
-                      <div class="mb-3">
-                           <label for="clientAddress" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-translate-key="address">Address</label>
-                           <input type="text" id="clientAddress" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                      <div>
+                           <label for="job-address-street" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
+                           <input type="text" id="job-address-street" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
                       </div>
-                       <div class="mb-3">
+                      <div>
+                           <label for="job-address-apt" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Apt/Suit #</label>
+                           <input type="text" id="job-address-apt" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                      </div>
+                      <div class="grid grid-cols-2 gap-4">
+                          <div>
+                               <label for="job-address-city" class="block text-sm font-medium text-gray-700 dark:text-gray-300">City</label>
+                               <input type="text" id="job-address-city" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                          </div>
+                          <div>
+                               <label for="job-address-state" class="block text-sm font-medium text-gray-700 dark:text-gray-300">State</label>
+                               <select id="job-address-state" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                                    <option>CO</option><option>AL</option><option>AK</option><option>AZ</option><option>AR</option><option>CA</option><option>CT</option><option>DE</option><option>FL</option><option>GA</option><option>HI</option><option>ID</option><option>IL</option><option>IN</option><option>IA</option><option>KS</option><option>KY</option><option>LA</option><option>ME</option><option>MD</option><option>MA</option><option>MI</option><option>MN</option><option>MS</option><option>MO</option><option>MT</option><option>NE</option><option>NV</option><option>NH</option><option>NJ</option><option>NM</option><option>NY</option><option>NC</option><option>ND</option><option>OH</option><option>OK</option><option>OR</option><option>PA</option><option>RI</option><option>SC</option><option>SD</option><option>TN</option><option>TX</option><option>UT</option><option>VT</option><option>VA</option><option>WA</option><option>WV</option><option>WI</option><option>WY</option>
+                               </select>
+                          </div>
+                      </div>
+                       <div>
+                           <label for="job-address-zip" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Zip Code</label>
+                           <input type="text" id="job-address-zip" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                      </div>
+                       <div>
                            <label for="jobTime" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-translate-key="time">Time</label>
-                           <input type="time" id="jobTime" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                           <input type="text" id="jobTime" required class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" readonly placeholder="Select a time">
                       </div>
-                       <div id="job-price-wrapper" class="mb-3 hidden">
+                       <div id="job-price-wrapper" class="hidden">
                            <label for="jobPrice" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-translate-key="job_price">Job Price ($)</label>
                            <input type="number" id="jobPrice" step="0.01" min="0" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
                       </div>
-                      <div class="mb-3">
+                      <div>
                            <label for="jobTasks" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-translate-key="tasks">Tasks</label>
                            <textarea id="jobTasks" rows="3" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" placeholder="e.g., Standard Clean..."></textarea>
                       </div>
-                      <div class="flex justify-end space-x-2">
+                      <div class="flex justify-end space-x-2 pt-2">
                            <button type="button" id="cancel-job-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-white" data-translate-key="cancel">Cancel</button>
                            <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark" data-translate-key="save_job">Save Job</button>
                       </div>
                   </form>
              </div>
+        </div>
+
+        <div id="time-picker-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-xs">
+                <h3 class="text-xl font-bold text-dark dark:text-white mb-4 text-center">Select Time</h3>
+                <div class="flex justify-center items-center space-x-2">
+                    <!-- Hour -->
+                    <select id="time-picker-hour" class="w-20 p-2 text-lg text-center bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md">
+                        <!-- Options 1-12 -->
+                    </select>
+                    <span class="font-bold text-xl dark:text-white">:</span>
+                    <!-- Minute -->
+                    <select id="time-picker-minute" class="w-20 p-2 text-lg text-center bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md">
+                        <!-- Options 00-59 -->
+                    </select>
+                    <!-- AM/PM -->
+                    <select id="time-picker-ampm" class="w-20 p-2 text-lg text-center bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md">
+                        <option>AM</option>
+                        <option>PM</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-2 mt-6">
+                    <button type="button" id="cancel-time-picker-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-white">Cancel</button>
+                    <button type="button" id="save-time-picker-btn" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark">Set Time</button>
+                </div>
+            </div>
         </div>
         
         <div id="timesheet-edit-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden">

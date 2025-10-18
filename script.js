@@ -58,6 +58,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsManageUsersBtn = document.getElementById('settings-manage-users-btn');
     const weekSelect = document.getElementById('week-select');
     const adminWeekSelect = document.getElementById('admin-week-select');
+    const clientSearchInput = document.getElementById('client-search-input');
+    const timePickerModal = document.getElementById('time-picker-modal');
+    const jobTimeInput = document.getElementById('jobTime');
 
 
     // --- DATA & STATE ---
@@ -66,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUser = null;
     let clockInTime = null;
     let shiftTimerInterval = null;
-    let itemToDelete = { type: null, id: null };
+    let itemToDelete = { type: null, id: null, element: null };
     
     // --- TRANSLATIONS & SETTINGS ---
     const translations = {
@@ -107,6 +110,13 @@ document.addEventListener('DOMContentLoaded', () => {
             payroll: "Payroll",
             net_income: "Net Income",
             completed_jobs: "Completed Jobs",
+            paid: "Paid",
+            unpaid: "Unpaid",
+            edit: "Edit",
+            manage_users: "Manage Users",
+            administrator: "Administrator",
+            employee: "Employee",
+            canceled: "Canceled",
         },
         es: {
             schedule: 'Horario', clients: 'Clientes', time_pay: 'Planilla y Paga', earnings: 'Ganancias', settings: 'Ajustes',
@@ -145,6 +155,13 @@ document.addEventListener('DOMContentLoaded', () => {
             payroll: "Nómina",
             net_income: "Ingreso Neto",
             completed_jobs: "Trabajos Completados",
+            paid: "Pagado",
+            unpaid: "No Pagado",
+            edit: "Editar",
+            manage_users: "Gestionar Usuarios",
+            administrator: "Administrador",
+            employee: "Empleado",
+            canceled: "Cancelado",
         }
     };
     let currentLang = 'en';
@@ -165,6 +182,28 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         localStorage.setItem('betzaAppState', JSON.stringify(appState));
     }
+    
+    function getFullAddressString(addressObj) {
+        if (!addressObj) return '';
+        if (typeof addressObj === 'string') return addressObj; // Backwards compatibility
+        return [addressObj.street, addressObj.apt, addressObj.city, addressObj.state, addressObj.zip].filter(Boolean).join(', ');
+    }
+    
+    // Simple migration for old address string format
+    function migrateAddressData(data) {
+        if (!data) return;
+        Object.values(data).forEach(item => {
+            if (item.address && typeof item.address === 'string') {
+                item.address = {
+                    street: item.address,
+                    apt: '',
+                    city: '',
+                    state: 'CO',
+                    zip: ''
+                };
+            }
+        });
+    }
 
     function initData() {
         const savedState = localStorage.getItem('betzaAppState');
@@ -172,23 +211,103 @@ document.addEventListener('DOMContentLoaded', () => {
             const appState = JSON.parse(savedState);
             users = appState.users;
             clients = appState.clients;
+            schedule = appState.schedule;
+            
+            // Run migration for clients and schedule
+            migrateAddressData(clients);
+            migrateAddressData(schedule);
+
             nextClientId = appState.nextClientId;
             nextUserId = appState.nextUserId;
             nextJobId = appState.nextJobId;
-            schedule = appState.schedule;
             timesheets = appState.timesheets;
             payAdjustments = appState.payAdjustments;
         } else {
+            // Generate Test Data
             users = {
-                1: { id: 1, username: 'Betza', password: 'password', role: 'admin', hourlyWage: 0 }
+                1: { id: 1, username: 'Betza', password: 'password', role: 'admin', hourlyWage: 0 },
+                2: { id: 2, username: 'employee1', password: 'password', role: 'user', hourlyWage: 20.50 },
+                3: { id: 3, username: 'employee2', password: 'password', role: 'user', hourlyWage: 22.00 }
             };
             clients = {};
-            nextClientId = 1;
-            nextUserId = 2;
-            nextJobId = 1;
             schedule = [];
-            timesheets = {};
-            payAdjustments = {};
+            timesheets = { 2: [], 3: [] };
+            payAdjustments = {
+                2: { vehicleUsageEnabled: true, vehicleUsageAmount: 15 },
+                3: { vehicleUsageEnabled: false, vehicleUsageAmount: 0 }
+            };
+            nextClientId = 1;
+            nextUserId = 4;
+            nextJobId = 1;
+            
+            const firstNames = ["Leia", "Luke", "Han", "Ben", "Rey", "Finn", "Poe", "Chewbacca", "Lando", "Jyn"];
+            const lastNames = ["Organa", "Skywalker", "Solo", "Kenobi", "Palpatine", "Dameron", "Calrissian", "Erso", "Fett", "Vader"];
+            const cities = ["Denver", "Lakewood", "Aurora", "Centennial", "Arvada"];
+
+            for(let i=0; i<10; i++){
+                const newId = nextClientId++;
+                clients[newId] = {
+                    id: newId,
+                    name: `${firstNames[i]} ${lastNames[i]}`,
+                    phone: `(303) 555-01${i.toString().padStart(2,'0')}`,
+                    recurrence: 'biweekly',
+                    address: {
+                        street: `${123 + i*10} Main St`,
+                        apt: i % 3 === 0 ? `Apt ${i+1}`: '',
+                        city: cities[i % cities.length],
+                        state: 'CO',
+                        zip: `${80201 + i}`
+                    }
+                }
+            }
+
+            const today = new Date();
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() - i);
+                const dateString = date.toISOString().split('T')[0];
+                
+                // Add 1 to 3 jobs per day
+                for (let j = 0; j < Math.floor(Math.random() * 3) + 1; j++) {
+                    const client = clients[Math.floor(Math.random() * 10) + 1];
+                    schedule.push({
+                        id: nextJobId++,
+                        date: dateString,
+                        clientId: client.id,
+                        clientName: client.name,
+                        phone: client.phone,
+                        price: Math.floor(Math.random() * 100) + 50,
+                        time: `${Math.floor(Math.random() * 8) + 9}:00`,
+                        tasks: "Standard Cleaning",
+                        address: client.address,
+                        isPaid: Math.random() > 0.5,
+                        paymentMethod: 'Venmo',
+                        paymentDate: new Date().toLocaleDateString(),
+                        status: 'active'
+                    });
+                }
+            }
+
+            // Generate timesheet data for 2 employees for the past 2 weeks
+            [2, 3].forEach(employeeId => {
+                for (let i = 0; i < 14; i++) {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() - i);
+                    // Skip weekends
+                    if (date.getDay() === 0 || date.getDay() === 6) continue;
+                    
+                    const clockIn = new Date(date);
+                    clockIn.setHours(9, Math.floor(Math.random() * 15), 0, 0); // Start between 9:00 - 9:14
+
+                    const clockOut = new Date(date);
+                    clockOut.setHours(17, Math.floor(Math.random() * 15), 0, 0); // End between 17:00 - 17:14
+
+                    timesheets[employeeId].push({
+                        clockIn: clockIn.toISOString(),
+                        clockOut: clockOut.toISOString()
+                    });
+                }
+            });
         }
     }
 
@@ -221,9 +340,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if(screenId === 'settings') {
                 showSettingsSubView('settings-main-view');
             }
+            if (screenId === 'clients') {
+                clientSearchInput.value = '';
+                renderClients();
+            }
         }
-        const titleKey = screenId.charAt(0).toUpperCase() + screenId.slice(1);
-        headerTitle.textContent = translations[currentLang][screenId] || titleKey;
+        const titleKey = screenId;
+        headerTitle.textContent = translations[currentLang][titleKey] || titleKey.charAt(0).toUpperCase() + titleKey.slice(1);
     }
     
     function updateRoleBasedViews() {
@@ -310,11 +433,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         populateWeekSelector();
+        populateTimePicker();
         
         updateClockButtonState();
         updateRoleBasedViews(); 
         populateEmployeeDropdowns();
-        populateClientDropdown();
         renderContent();
         showScreen('schedule');
         updateNav('schedule');
@@ -347,38 +470,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const jobListHTML = jobsForDate.map(job => {
             const isAdmin = currentUser.role === 'admin';
-            const paidBadge = job.isPaid
-                ? `<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-green-600 bg-green-200" data-translate-key="paid">Paid</span>`
-                : `<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-red-600 bg-red-200" data-translate-key="unpaid">Unpaid</span>`;
+            const isCanceled = job.status === 'canceled';
+            
+            let statusBadge = '';
+            if (isCanceled) {
+                statusBadge = `<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-gray-600 bg-gray-200" data-translate-key="canceled">Canceled</span>`;
+            } else if (job.isPaid) {
+                statusBadge = `<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-green-600 bg-green-200" data-translate-key="paid">Paid</span>`;
+            } else {
+                statusBadge = `<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-red-600 bg-red-200" data-translate-key="unpaid">Unpaid</span>`;
+            }
+
             const priceDisplay = isAdmin && job.price ? `<span class="font-bold text-primary">$${job.price.toFixed(2)}</span>` : '';
             const adminControls = isAdmin ? `
-                <button class="edit-job-btn text-blue-500 hover:text-blue-700 dark:text-blue-400 ml-2" data-job-id="${job.id}"><i class="fas fa-pencil-alt"></i></button>
+                <div class="flex items-center">
+                  <button class="edit-job-btn text-blue-500 hover:text-blue-700 dark:text-blue-400 ml-2" data-job-id="${job.id}"><i class="fas fa-pencil-alt"></i></button>
+                  <button class="cancel-job-btn text-yellow-500 hover:text-yellow-700 dark:text-yellow-400 ml-2" data-job-id="${job.id}"><i class="fas fa-ban"></i></button>
+                  <button class="delete-job-btn text-red-500 hover:text-red-700 dark:text-red-400 ml-2" data-job-id="${job.id}"><i class="fas fa-trash-alt"></i></button>
+                </div>
             ` : '';
+            const fullAddress = getFullAddressString(job.address);
+
+            const cardClasses = isCanceled ? 'bg-gray-100 dark:bg-gray-800 opacity-60' : 'bg-white dark:bg-gray-700';
+            const textClasses = isCanceled ? 'line-through' : '';
 
             return `
-            <div class="bg-white dark:bg-gray-700 p-4 rounded-lg shadow border-l-4 border-primary">
+            <div class="${cardClasses} p-4 rounded-lg shadow border-l-4 ${isCanceled ? 'border-gray-400' : 'border-primary'}">
                 <div class="flex justify-between items-start">
                     <div>
-                        <p class="font-bold text-dark dark:text-white">${formatTime(job.time)} - ${job.clientName}</p>
-                        ${priceDisplay ? `<p class="text-sm">${priceDisplay}</p>` : ''}
+                        <p class="font-bold text-dark dark:text-white ${textClasses}">${formatTime(job.time)} - ${job.clientName}</p>
+                        ${priceDisplay ? `<p class="text-sm ${textClasses}">${priceDisplay}</p>` : ''}
                     </div>
                     <div class="flex items-center">
-                        ${isAdmin ? `<button class="toggle-paid-btn" data-job-id="${job.id}">${paidBadge}</button>` : ''}
-                        ${adminControls}
+                        ${isAdmin && !isCanceled ? `<button class="toggle-paid-btn" data-job-id="${job.id}">${statusBadge}</button>` : statusBadge}
                     </div>
                 </div>
                 <div class="text-sm mt-1 space-y-1">
-                    <a href="https://maps.google.com/?q=${encodeURIComponent(job.address)}" target="_blank" class="flex items-center text-blue-500 dark:text-blue-400 hover:underline">
+                    <a href="https://maps.google.com/?q=${encodeURIComponent(fullAddress)}" target="_blank" class="flex items-center text-blue-500 dark:text-blue-400 hover:underline ${textClasses}">
                         <i class="fas fa-map-marker-alt fa-fw mr-2"></i>
-                        <span>${job.address}</span>
+                        <span>${fullAddress}</span>
                     </a>
                     ${job.phone ? `
-                    <a href="tel:${job.phone}" class="flex items-center text-blue-500 dark:text-blue-400 hover:underline">
+                    <a href="tel:${job.phone}" class="flex items-center text-blue-500 dark:text-blue-400 hover:underline ${textClasses}">
                         <i class="fas fa-phone fa-fw mr-2"></i>
                         <span>${job.phone}</span>
                     </a>` : ''}
                 </div>
-                <p class="text-sm text-gray-600 dark:text-gray-300 mt-2"><strong data-translate-key="tasks">Tasks:</strong> ${job.tasks || 'N/A'}</p>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mt-2 ${textClasses}"><strong data-translate-key="tasks">Tasks:</strong> ${job.tasks || 'N/A'}</p>
+                 ${isAdmin ? adminControls : ''}
             </div>
         `}).join('');
 
@@ -396,6 +535,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.querySelectorAll('.toggle-paid-btn').forEach(btn => btn.addEventListener('click', handleTogglePaid));
         document.querySelectorAll('.edit-job-btn').forEach(btn => btn.addEventListener('click', handleEditJobClick));
+        document.querySelectorAll('.delete-job-btn').forEach(btn => btn.addEventListener('click', handleDeleteJobClick));
+        document.querySelectorAll('.cancel-job-btn').forEach(btn => btn.addEventListener('click', handleCancelJobClick));
     }
     
     function renderUsers() {
@@ -407,28 +548,33 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        userListDiv.innerHTML = displayUsers.map(user => `
-            <button class="user-tile text-left w-full bg-white dark:bg-gray-700 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition" data-user-id="${user.id}">
-                <p class="font-bold text-lg text-dark dark:text-white">${user.username}</p>
-                <p class="text-sm font-semibold ${user.role === 'admin' ? 'text-primary' : 'text-gray-500 dark:text-gray-400'}">${user.role === 'admin' ? 'Administrator' : 'Employee'}</p>
-            </button>
-        `).join('');
+        userListDiv.innerHTML = displayUsers.map(user => {
+            const roleKey = user.role === 'admin' ? 'administrator' : 'employee';
+            return `
+                <button class="user-tile text-left w-full bg-white dark:bg-gray-700 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition" data-user-id="${user.id}">
+                    <p class="font-bold text-lg text-dark dark:text-white">${user.username}</p>
+                    <p class="text-sm font-semibold ${user.role === 'admin' ? 'text-primary' : 'text-gray-500 dark:text-gray-400'}" data-translate-key="${roleKey}">${translations[currentLang][roleKey]}</p>
+                </button>
+            `
+        }).join('');
 
         userListDiv.querySelectorAll('.user-tile').forEach(tile => {
             tile.addEventListener('click', (e) => openUserDetailsModal(e.currentTarget.dataset.userId));
         });
     }
 
-    function renderClients() {
+    function renderClients(filteredClients = null) {
         if (!clientListDiv) return;
         
+        const clientSource = filteredClients ? filteredClients : Object.values(clients);
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const fourDaysAgo = new Date(today);
         fourDaysAgo.setDate(today.getDate() - 4);
 
-        const clientArray = Object.values(clients).map(client => {
-            const clientJobs = schedule.filter(job => job.clientId === client.id);
+        const clientArray = clientSource.map(client => {
+            const clientJobs = schedule.filter(job => job.clientId == client.id && job.status !== 'canceled');
             const hasUnpaid = clientJobs.some(job => !job.isPaid);
             const hasOverdue = clientJobs.some(job => {
                 const jobDate = new Date(job.date + 'T00:00:00');
@@ -444,7 +590,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (clientArray.length === 0) {
-            clientListDiv.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400">No clients saved yet.</p>`;
+            clientListDiv.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400">No clients found.</p>`;
             return;
         }
         clientListDiv.innerHTML = clientArray.map(client => {
@@ -459,7 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${unpaidIndicator}
                     ${overdueText}
                 </div>
-                <p class="text-sm text-gray-600 dark:text-gray-300">${client.address}</p>
+                <p class="text-sm text-gray-600 dark:text-gray-300">${getFullAddressString(client.address)}</p>
                 <p class="text-xs font-semibold text-primary uppercase mt-1">${recurrenceText}</p>
             </button>
         `}).join('');
@@ -469,6 +615,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderEarnings() {
         if(currentUser.role !== 'admin') return;
+
+        const activeJobs = schedule.filter(j => j.status !== 'canceled');
 
         const selectedDateStr = scheduleDatePicker.value;
         const today = new Date();
@@ -480,16 +628,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentNextMonthStart = new Date(today.getFullYear(), today.getMonth() + 1, 1);
 
         // --- Income Calculation ---
-        const paidJobsDay = schedule.filter(job => job.date === selectedDateStr && job.isPaid);
+        const paidJobsDay = activeJobs.filter(job => job.date === selectedDateStr && job.isPaid);
         const dayEarnings = paidJobsDay.reduce((sum, job) => sum + (job.price || 0), 0);
         
-        const paidJobsWeek = schedule.filter(job => {
+        const paidJobsWeek = activeJobs.filter(job => {
             const jobDate = new Date(job.date + 'T00:00:00');
             return jobDate >= currentWeekStart && jobDate < currentWeekEnd && job.isPaid;
         });
         const weekEarnings = paidJobsWeek.reduce((sum, job) => sum + (job.price || 0), 0);
 
-        const paidJobsMonth = schedule.filter(job => {
+        const paidJobsMonth = activeJobs.filter(job => {
             const jobDate = new Date(job.date + 'T00:00:00');
             return jobDate >= currentMonthStart && jobDate < currentNextMonthStart && job.isPaid;
         });
@@ -567,6 +715,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function formatTime(input) {
         if (!input) return '';
+        // Check if it's already in 12-hour format with AM/PM
+        if (/^\d{1,2}:\d{2}\s(AM|PM)$/i.test(input)) {
+            return input;
+        }
         if (input instanceof Date) {
             let hours = input.getHours();
             let minutes = input.getMinutes();
@@ -596,7 +748,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 0);
     }
     
+    function formatDateForDisplay(date) {
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        if (currentLang === 'es') {
+            return date.toLocaleDateString('es-ES', options);
+        }
+        return date.toLocaleDateString('en-US', options);
+    }
+    
     function renderTimeAndPay(employeeId = null) {
+        if (!currentUser) return;
         const isAdmin = currentUser.role === 'admin';
         const targetUserId = isAdmin ? (employeeId || document.getElementById('employee-select-time-pay').value) : currentUser.id;
         
@@ -608,7 +769,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        let userTimesheet = timesheets[targetUserId] || [];
+        let userTimesheet = [...(timesheets[targetUserId] || [])]; // Create a copy to sort
+        
+        // Sort timesheet entries chronologically
+        userTimesheet.sort((a, b) => new Date(a.clockIn) - new Date(b.clockIn));
+
         const logContainer = isAdmin ? document.getElementById('admin-timesheet-log') : document.getElementById('user-timesheet-log');
 
         const weekSelector = isAdmin ? adminWeekSelect : weekSelect;
@@ -625,11 +790,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const clockInDate = new Date(entry.clockIn);
             const clockOutDate = entry.clockOut ? new Date(entry.clockOut) : null;
             const duration = clockOutDate ? `${((clockOutDate - clockInDate) / (1000 * 60 * 60)).toFixed(2)} hrs` : 'Ongoing';
-            const adminControls = isAdmin ? `<div class="flex space-x-4 mt-2 justify-end"><button class="edit-timesheet-btn text-blue-500 hover:text-blue-700 dark:text-blue-400 text-sm font-semibold" data-user-id="${targetUserId}" data-index="${index}"><i class="fas fa-pencil-alt fa-fw mr-1"></i>Edit</button><button class="delete-timesheet-btn text-red-500 hover:text-red-700 text-sm font-semibold" data-user-id="${targetUserId}" data-index="${index}"><i class="fas fa-trash-alt fa-fw mr-1"></i>Delete</button></div>` : '';
+            const adminControls = isAdmin ? `<div class="flex space-x-4 mt-2 justify-end"><button class="edit-timesheet-btn text-blue-500 hover:text-blue-700 dark:text-blue-400 text-sm font-semibold" data-user-id="${targetUserId}" data-index="${index}"><i class="fas fa-pencil-alt fa-fw mr-1"></i><span data-translate-key="edit">Edit</span></button><button class="delete-timesheet-btn text-red-500 hover:text-red-700 text-sm font-semibold" data-user-id="${targetUserId}" data-index="${index}"><i class="fas fa-trash-alt fa-fw mr-1"></i><span data-translate-key="delete">Delete</span></button></div>` : '';
             return `
                 <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg mb-2">
                     <div class="flex justify-between items-center">
-                        <div><p class="font-semibold dark:text-white">${clockInDate.toDateString()}</p><p class="text-sm text-gray-600 dark:text-gray-300">${formatTime(clockInDate)} - ${clockOutDate ? formatTime(clockOutDate) : '...'}</p></div>
+                        <div><p class="font-semibold dark:text-white">${formatDateForDisplay(clockInDate)}</p><p class="text-sm text-gray-600 dark:text-gray-300">${formatTime(clockInDate)} - ${clockOutDate ? formatTime(clockOutDate) : '...'}</p></div>
                         <div class="font-bold text-primary">${duration}</div>
                     </div>
                     ${adminControls}
@@ -660,7 +825,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="flex justify-between items-center pt-3 mt-2"><span class="font-bold text-lg text-dark dark:text-white" data-translate-key="total_pay">Estimated Total Pay:</span><span class="font-bold text-lg text-primary">$${totalPay.toFixed(2)}</span></div>`;
 
         const payContainer = isAdmin ? document.getElementById('admin-pay-details') : document.getElementById('user-pay-details');
-        payContainer.innerHTML = detailsHtml;
+        if (payContainer) payContainer.innerHTML = detailsHtml;
         applyLanguage(currentLang);
     }
 
@@ -743,17 +908,23 @@ document.addEventListener('DOMContentLoaded', () => {
             historyHtml = clientJobs.map(job => {
                 let paymentInfoHtml;
                 const jobPriceHtml = job.price ? `<span class="font-bold text-dark dark:text-white">$${job.price.toFixed(2)}</span>` : '';
-                if (job.isPaid) {
+                
+                if (job.status === 'canceled') {
+                    paymentInfoHtml = `<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-gray-600 bg-gray-200" data-translate-key="canceled">Canceled</span>`;
+                } else if (job.isPaid) {
                      paymentInfoHtml = `
                          <div class="text-right">
-                             <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-green-600 bg-green-200">Paid</span>
+                             <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-green-600 bg-green-200" data-translate-key="paid">Paid</span>
                              <p class="text-xs text-gray-500 dark:text-gray-400">${job.paymentMethod} on ${job.paymentDate}</p>
                          </div>`;
                 } else {
-                    paymentInfoHtml = `<button class="mark-job-paid-from-client-btn text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-red-600 bg-red-200 hover:bg-red-300 transition" data-job-id="${job.id}">Unpaid</button>`;
+                    paymentInfoHtml = `<button class="mark-job-paid-from-client-btn text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-red-600 bg-red-200 hover:bg-red-300 transition" data-job-id="${job.id}" data-translate-key="unpaid">Unpaid</button>`;
                 }
+
+                const textClass = job.status === 'canceled' ? 'line-through' : '';
+
                 return `<div class="flex justify-between items-center text-sm py-2 border-b dark:border-gray-600">
-                            <div>
+                            <div class="${textClass}">
                                 <span class="text-gray-700 dark:text-gray-300">${new Date(job.date + 'T00:00:00').toLocaleDateString()}</span>
                                 ${jobPriceHtml ? `<span class="ml-2">${jobPriceHtml}</span>` : ''}
                             </div>
@@ -766,7 +937,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="space-y-4" data-client-id="${client.id}">
                  <div>
                      <h4 class="text-md font-bold text-dark dark:text-white" data-translate-key="client_details">Client Details</h4>
-                     <p class="text-sm text-gray-600 dark:text-gray-300">${client.address}</p>
+                     <p class="text-sm text-gray-600 dark:text-gray-300">${getFullAddressString(client.address)}</p>
                      <p class="text-sm text-gray-600 dark:text-gray-400">${client.phone}</p>
                      <p class="text-xs font-semibold text-primary uppercase mt-1">${recurrenceText}</p>
                  </div>
@@ -812,13 +983,21 @@ document.addEventListener('DOMContentLoaded', () => {
     function openClientModal(clientId = null) {
         clientForm.reset();
         document.getElementById('client-id').value = clientId || '';
+        document.getElementById('client-address-state').value = 'CO';
+
         if(clientId) {
             const client = clients[clientId];
             clientModalTitle.textContent = `Edit ${client.name}`;
             document.getElementById('client-name').value = client.name;
-            document.getElementById('client-address').value = client.address;
             document.getElementById('client-phone').value = client.phone;
             document.getElementById('client-recurrence').value = client.recurrence;
+            if (client.address) {
+                document.getElementById('client-address-street').value = client.address.street || '';
+                document.getElementById('client-address-apt').value = client.address.apt || '';
+                document.getElementById('client-address-city').value = client.address.city || '';
+                document.getElementById('client-address-state').value = client.address.state || 'CO';
+                document.getElementById('client-address-zip').value = client.address.zip || '';
+            }
         } else {
             clientModalTitle.textContent = 'Add New Client';
         }
@@ -831,9 +1010,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = document.getElementById('client-id').value;
         const clientData = {
             name: document.getElementById('client-name').value,
-            address: document.getElementById('client-address').value,
             phone: document.getElementById('client-phone').value,
             recurrence: document.getElementById('client-recurrence').value,
+            address: {
+                street: document.getElementById('client-address-street').value,
+                apt: document.getElementById('client-address-apt').value,
+                city: document.getElementById('client-address-city').value,
+                state: document.getElementById('client-address-state').value,
+                zip: document.getElementById('client-address-zip').value,
+            }
         };
         if (id) {
             clients[id] = { ...clients[id], ...clientData };
@@ -842,7 +1027,6 @@ document.addEventListener('DOMContentLoaded', () => {
             clients[newId] = { id: newId, ...clientData };
         }
         renderClients();
-        populateClientDropdown();
         closeModal(clientModal);
         saveState();
     }
@@ -850,8 +1034,27 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleDeleteClientClick(e) {
         const clientId = e.currentTarget.dataset.clientId;
         itemToDelete = { type: 'client', id: clientId };
-        confirmDeleteText.textContent = `This will permanently delete the client '${clients[clientId].name}'. This action cannot be undone.`;
+        confirmDeleteText.textContent = `This will permanently delete the client '${clients[clientId].name}' and all associated jobs. This action cannot be undone.`;
         openModal(confirmDeleteModal);
+    }
+    
+    function handleDeleteJobClick(e) {
+        const jobId = e.currentTarget.dataset.jobId;
+        const job = schedule.find(j => j.id == jobId);
+        itemToDelete = { type: 'job', id: jobId, element: e.currentTarget.closest('.bg-white, .bg-gray-100') };
+        confirmDeleteText.textContent = `Are you sure you want to delete the job for '${job.clientName}' on ${job.date}? This cannot be undone.`;
+        openModal(confirmDeleteModal);
+    }
+
+    function handleCancelJobClick(e) {
+        const jobId = e.currentTarget.dataset.jobId;
+        const job = schedule.find(j => j.id == jobId);
+        if (job) {
+            job.status = job.status === 'canceled' ? 'active' : 'canceled';
+            renderSchedule();
+            updateUnpaidIndicators();
+            saveState();
+        }
     }
 
 
@@ -898,13 +1101,6 @@ document.addEventListener('DOMContentLoaded', () => {
         timePaySelect.value = currentTimePayVal || employeeUsers[0]?.id;
     }
 
-    function populateClientDropdown() {
-        const clientSelect = document.getElementById('job-client-select');
-        if (!clientSelect) return;
-        clientSelect.innerHTML = `<option value="" data-translate-key="select_client" selected disabled>Select Client</option>`;
-        clientSelect.innerHTML += Object.values(clients).map(client => `<option value="${client.id}">${client.name}</option>`).join('');
-    }
-
     function handleClocking() {
         if (clockInTime) {
             const clockOutTime = new Date();
@@ -946,7 +1142,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleSaveJob(e) {
         e.preventDefault();
         const jobId = document.getElementById('job-id').value;
-        const clientId = document.getElementById('job-client-select').value;
+        const clientId = document.getElementById('job-client-id').value;
         
         if (!clientId) {
             showInfoModal('Client Needed', 'Please select a client.');
@@ -959,11 +1155,18 @@ document.addEventListener('DOMContentLoaded', () => {
             date: scheduleDatePicker.value,
             clientId: clientId,
             clientName: client.name,
-            address: document.getElementById('clientAddress').value,
-            time: document.getElementById('jobTime').value,
-            tasks: document.getElementById('jobTasks').value,
             phone: client.phone,
             price: parseFloat(document.getElementById('jobPrice').value) || 0,
+            time: jobTimeInput.dataset.time24,
+            tasks: document.getElementById('jobTasks').value,
+            address: {
+                street: document.getElementById('job-address-street').value,
+                apt: document.getElementById('job-address-apt').value,
+                city: document.getElementById('job-address-city').value,
+                state: document.getElementById('job-address-state').value,
+                zip: document.getElementById('job-address-zip').value,
+            },
+            status: 'active'
         };
         
         if (jobId) {
@@ -1059,6 +1262,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function handleAddManualEntryClick() {
         const selectedUserId = document.getElementById('employee-select-time-pay').value;
+        if (!selectedUserId) {
+            showInfoModal('Error', 'Please select an employee first.');
+            return;
+        }
         timesheetModalTitle.textContent = `${translations[currentLang].add_manual_entry} for ${users[selectedUserId].username}`;
         timesheetEditForm.reset();
         timesheetEntryIndexInput.value = -1;
@@ -1083,9 +1290,18 @@ document.addEventListener('DOMContentLoaded', () => {
             timesheets[itemToDelete.userId].splice(itemToDelete.index, 1);
             renderTimeAndPay();
         } else if (itemToDelete.type === 'client') {
-            delete clients[itemToDelete.id];
+            const clientId = itemToDelete.id;
+            delete clients[clientId];
+            schedule = schedule.filter(job => job.clientId != clientId); // Also delete jobs for this client
             renderClients();
-            populateClientDropdown();
+            renderSchedule();
+        } else if (itemToDelete.type === 'job') {
+            const jobIndex = schedule.findIndex(j => j.id == itemToDelete.id);
+            if(jobIndex > -1) {
+                schedule.splice(jobIndex, 1);
+            }
+            renderSchedule();
+            updateUnpaidIndicators();
         }
         closeModal(confirmDeleteModal);
         itemToDelete = { type: null, id: null };
@@ -1163,8 +1379,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function openAddJobModal(jobId = null) {
         addJobForm.reset();
         document.getElementById('job-id').value = jobId || '';
+        document.getElementById('job-address-state').value = 'CO';
         const modalTitle = document.getElementById('add-job-modal-title');
-        const clientSelect = document.getElementById('job-client-select');
         const jobPriceWrapper = document.getElementById('job-price-wrapper');
 
         jobPriceWrapper.classList.toggle('hidden', currentUser.role !== 'admin');
@@ -1172,16 +1388,27 @@ document.addEventListener('DOMContentLoaded', () => {
         if (jobId) {
             modalTitle.textContent = 'Edit Job';
             const job = schedule.find(j => j.id == jobId);
-            clientSelect.value = job.clientId || '';
-            document.getElementById('clientAddress').value = job.address;
-            document.getElementById('jobTime').value = job.time;
+            
+            // Set client search
+            const client = clients[job.clientId];
+            document.getElementById('job-client-search').value = client ? client.name : '';
+            document.getElementById('job-client-id').value = job.clientId || '';
+
+            jobTimeInput.value = formatTime(job.time);
+            jobTimeInput.dataset.time24 = job.time;
             document.getElementById('jobTasks').value = job.tasks;
+            if (job.address) {
+                document.getElementById('job-address-street').value = job.address.street || '';
+                document.getElementById('job-address-apt').value = job.address.apt || '';
+                document.getElementById('job-address-city').value = job.address.city || '';
+                document.getElementById('job-address-state').value = job.address.state || 'CO';
+                document.getElementById('job-address-zip').value = job.address.zip || '';
+            }
             if(currentUser.role === 'admin') {
                 document.getElementById('jobPrice').value = job.price ? job.price.toFixed(2) : '0.00';
             }
         } else {
             modalTitle.textContent = 'Add New Job';
-            clientSelect.value = '';
         }
         applyLanguage(currentLang);
         openModal(addJobModal);
@@ -1215,7 +1442,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateUnpaidIndicators() {
         if(currentUser?.role !== 'admin') return;
-        const unpaidCount = schedule.filter(job => !job.isPaid).length;
+        const unpaidCount = schedule.filter(job => !job.isPaid && job.status !== 'canceled').length;
         const badge = document.getElementById('unpaid-jobs-badge');
         if (unpaidCount > 0) {
             badge.textContent = unpaidCount;
@@ -1262,7 +1489,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('lang-es-btn').classList.toggle('bg-primary', lang === 'es');
         document.getElementById('lang-es-btn').classList.toggle('text-white', lang === 'es');
         localStorage.setItem('betzaAppLang', lang);
-        updateClockButtonState();
+        
+        if (currentUser) {
+            updateClockButtonState();
+        }
     }
 
     function applyTheme(theme) {
@@ -1390,6 +1620,17 @@ document.addEventListener('DOMContentLoaded', () => {
         adminWeekSelect.innerHTML = optionsHtml;
     }
 
+    function populateTimePicker() {
+        const hourSelect = document.getElementById('time-picker-hour');
+        const minuteSelect = document.getElementById('time-picker-minute');
+        for (let i = 1; i <= 12; i++) {
+            hourSelect.innerHTML += `<option>${i}</option>`;
+        }
+        for (let i = 0; i < 60; i+=5) {
+            minuteSelect.innerHTML += `<option>${i.toString().padStart(2, '0')}</option>`;
+        }
+    }
+
 
     // --- EVENT LISTENERS ---
     document.body.addEventListener('click', (e) => {
@@ -1440,9 +1681,49 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cancel-client-btn').addEventListener('click', () => closeModal(clientModal));
     clientForm.addEventListener('submit', handleSaveClient);
     
-    document.getElementById('job-client-select').addEventListener('change', (e) => {
-        const clientId = e.target.value;
-        document.getElementById('clientAddress').value = clients[clientId]?.address || '';
+    const clientSearch = document.getElementById('job-client-search');
+    const clientSuggestions = document.getElementById('job-client-suggestions');
+
+    clientSearch.addEventListener('input', () => {
+        const query = clientSearch.value.toLowerCase();
+        clientSuggestions.innerHTML = '';
+        if (query.length > 0) {
+            const filtered = Object.values(clients).filter(c => c.name.toLowerCase().includes(query));
+            if (filtered.length > 0) {
+                filtered.forEach(client => {
+                    const div = document.createElement('div');
+                    div.textContent = client.name;
+                    div.className = 'p-2 hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer';
+                    div.onclick = () => {
+                        clientSearch.value = client.name;
+                        document.getElementById('job-client-id').value = client.id;
+                        clientSuggestions.classList.add('hidden');
+                        
+                        // Auto-populate address
+                        const clientData = clients[client.id];
+                        if (clientData && clientData.address) {
+                            document.getElementById('job-address-street').value = clientData.address.street || '';
+                            document.getElementById('job-address-apt').value = clientData.address.apt || '';
+                            document.getElementById('job-address-city').value = clientData.address.city || '';
+                            document.getElementById('job-address-state').value = clientData.address.state || 'CO';
+                            document.getElementById('job-address-zip').value = clientData.address.zip || '';
+                        }
+                    };
+                    clientSuggestions.appendChild(div);
+                });
+                clientSuggestions.classList.remove('hidden');
+            } else {
+                clientSuggestions.classList.add('hidden');
+            }
+        } else {
+            clientSuggestions.classList.add('hidden');
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!clientSearch.contains(e.target) && !clientSuggestions.contains(e.target)) {
+            clientSuggestions.classList.add('hidden');
+        }
     });
     
     document.getElementById('newRole').addEventListener('change', (e) => {
@@ -1469,8 +1750,33 @@ document.addEventListener('DOMContentLoaded', () => {
     
     weekSelect.addEventListener('change', () => renderTimeAndPay());
     adminWeekSelect.addEventListener('change', () => renderTimeAndPay());
+
+    clientSearchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const filtered = Object.values(clients).filter(client => client.name.toLowerCase().includes(searchTerm));
+        renderClients(filtered);
+    });
+
+    jobTimeInput.addEventListener('click', () => openModal(timePickerModal));
+    document.getElementById('cancel-time-picker-btn').addEventListener('click', () => closeModal(timePickerModal));
+    document.getElementById('save-time-picker-btn').addEventListener('click', () => {
+        const hour = document.getElementById('time-picker-hour').value;
+        const minute = document.getElementById('time-picker-minute').value;
+        const ampm = document.getElementById('time-picker-ampm').value;
+        
+        jobTimeInput.value = `${hour}:${minute} ${ampm}`;
+
+        let hour24 = parseInt(hour, 10);
+        if (ampm === 'PM' && hour24 !== 12) hour24 += 12;
+        if (ampm === 'AM' && hour24 === 12) hour24 = 0;
+
+        jobTimeInput.dataset.time24 = `${hour24.toString().padStart(2,'0')}:${minute}`;
+        
+        closeModal(timePickerModal);
+    });
     
     // --- Init Call ---
     initData();
     loadSettings();
 });
+
