@@ -475,10 +475,12 @@ document.addEventListener('DOMContentLoaded', () => {
             let statusBadge = '';
             if (isCanceled) {
                 statusBadge = `<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-gray-600 bg-gray-200" data-translate-key="canceled">Canceled</span>`;
-            } else if (job.isPaid) {
-                statusBadge = `<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-green-600 bg-green-200" data-translate-key="paid">Paid</span>`;
-            } else {
-                statusBadge = `<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-red-600 bg-red-200" data-translate-key="unpaid">Unpaid</span>`;
+            } else if (isAdmin) { // Only show paid/unpaid for admin
+                if (job.isPaid) {
+                    statusBadge = `<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-green-600 bg-green-200" data-translate-key="paid">Paid</span>`;
+                } else {
+                    statusBadge = `<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-red-600 bg-red-200" data-translate-key="unpaid">Unpaid</span>`;
+                }
             }
 
             const priceDisplay = isAdmin && job.price ? `<span class="font-bold text-primary">$${job.price.toFixed(2)}</span>` : '';
@@ -825,8 +827,8 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="flex justify-between items-center pt-3 mt-2"><span class="font-bold text-lg text-dark dark:text-white" data-translate-key="total_pay">Estimated Total Pay:</span><span class="font-bold text-lg text-primary">$${totalPay.toFixed(2)}</span></div>`;
 
         const payContainer = isAdmin ? document.getElementById('admin-pay-details') : document.getElementById('user-pay-details');
-        if (payContainer) payContainer.innerHTML = detailsHtml;
-        applyLanguage(currentLang);
+        payContainer.innerHTML = detailsHtml;
+        // The recursive call was here, it's now removed.
     }
 
     // --- HANDLER & MODAL FUNCTIONS ---
@@ -900,8 +902,8 @@ document.addEventListener('DOMContentLoaded', () => {
         clientDetailsModalTitle.textContent = client.name;
         
         const clientJobs = schedule.filter(job => job.clientId == clientId)
-                                    .sort((a,b) => new Date(b.date) - new Date(a.date)) 
-                                    .slice(0, 5);
+                                       .sort((a,b) => new Date(b.date) - new Date(a.date)) 
+                                       .slice(0, 5);
         
         let historyHtml = '<p class="text-center text-gray-500 dark:text-gray-400">No recent cleaning history.</p>';
         if(clientJobs.length > 0) {
@@ -1242,7 +1244,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleDeleteUserClick(event) {
         itemToDelete = { type: 'user', id: event.currentTarget.dataset.userId };
-        confirmDeleteText.textContent = `This will permanently delete the user '${users[itemToDelete.id].username}'. This cannot be undone.`;
+        confirmDeleteText.textContent = `This will permanently delete the user '${users[itemToDelete.id].username}'. This action cannot be undone.`;
         closeModal(userDetailsModal);
         openModal(confirmDeleteModal);
     }
@@ -1492,6 +1494,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (currentUser) {
             updateClockButtonState();
+            // The recursive calls were here, they are now removed.
         }
     }
 
@@ -1779,4 +1782,3 @@ document.addEventListener('DOMContentLoaded', () => {
     initData();
     loadSettings();
 });
-
