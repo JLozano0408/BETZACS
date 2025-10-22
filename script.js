@@ -209,105 +209,50 @@ document.addEventListener('DOMContentLoaded', () => {
         const savedState = localStorage.getItem('betzaAppState');
         if (savedState) {
             const appState = JSON.parse(savedState);
-            users = appState.users;
-            clients = appState.clients;
-            schedule = appState.schedule;
-            
-            // Run migration for clients and schedule
+            users = appState.users || {}; // Ensure users is at least an empty object
+            clients = appState.clients || {}; // Ensure clients is at least an empty object
+            schedule = appState.schedule || []; // Ensure schedule is at least an empty array
+
+            // Run migration for clients and schedule if they exist
             migrateAddressData(clients);
             migrateAddressData(schedule);
 
-            nextClientId = appState.nextClientId;
-            nextUserId = appState.nextUserId;
-            nextJobId = appState.nextJobId;
-            timesheets = appState.timesheets;
-            payAdjustments = appState.payAdjustments;
+            nextClientId = appState.nextClientId || 1;
+            nextUserId = appState.nextUserId || 2; // Start after the default admin
+            nextJobId = appState.nextJobId || 1;
+            timesheets = appState.timesheets || {}; // Ensure timesheets is at least an empty object
+            payAdjustments = appState.payAdjustments || {}; // Ensure payAdjustments is at least an empty object
+
+             // Ensure the default admin user exists if loaded data doesn't have it or is corrupted
+             if (!users[1] || users[1].username !== 'Betza' || users[1].role !== 'admin') {
+                // Update the password here as well for consistency if the user needs to be recreated
+                users[1] = { id: 1, username: 'Betza', password: 'Santiago0501', role: 'admin', hourlyWage: 0 };
+                 // Reset nextUserId if necessary to avoid conflicts
+                 if (nextUserId <= 1) {
+                     nextUserId = 2;
+                 }
+                saveState(); // Save the state with the default admin if added/corrected
+            } else if (users[1] && users[1].password !== 'Santiago0501' && users[1].password === 'password') {
+                // If the user exists but has the old default password, update it
+                users[1].password = 'Santiago0501';
+                saveState(); // Save the updated password
+            }
+
+
         } else {
-            // Generate Test Data
+            // Initialize with default admin user and empty data structures
             users = {
-                1: { id: 1, username: 'Betza', password: 'password', role: 'admin', hourlyWage: 0 },
-                2: { id: 2, username: 'employee1', password: 'password', role: 'user', hourlyWage: 20.50 },
-                3: { id: 3, username: 'employee2', password: 'password', role: 'user', hourlyWage: 22.00 }
+                // Update the password here for initial creation
+                1: { id: 1, username: 'Betza', password: 'Santiago0501', role: 'admin', hourlyWage: 0 }
             };
             clients = {};
             schedule = [];
-            timesheets = { 2: [], 3: [] };
-            payAdjustments = {
-                2: { vehicleUsageEnabled: true, vehicleUsageAmount: 15 },
-                3: { vehicleUsageEnabled: false, vehicleUsageAmount: 0 }
-            };
+            timesheets = {};
+            payAdjustments = {};
             nextClientId = 1;
-            nextUserId = 4;
+            nextUserId = 2; // Start after the default admin
             nextJobId = 1;
-            
-            const firstNames = ["Leia", "Luke", "Han", "Ben", "Rey", "Finn", "Poe", "Chewbacca", "Lando", "Jyn"];
-            const lastNames = ["Organa", "Skywalker", "Solo", "Kenobi", "Palpatine", "Dameron", "Calrissian", "Erso", "Fett", "Vader"];
-            const cities = ["Denver", "Lakewood", "Aurora", "Centennial", "Arvada"];
-
-            for(let i=0; i<10; i++){
-                const newId = nextClientId++;
-                clients[newId] = {
-                    id: newId,
-                    name: `${firstNames[i]} ${lastNames[i]}`,
-                    phone: `(303) 555-01${i.toString().padStart(2,'0')}`,
-                    recurrence: 'biweekly',
-                    address: {
-                        street: `${123 + i*10} Main St`,
-                        apt: i % 3 === 0 ? `Apt ${i+1}`: '',
-                        city: cities[i % cities.length],
-                        state: 'CO',
-                        zip: `${80201 + i}`
-                    }
-                }
-            }
-
-            const today = new Date();
-            for (let i = 0; i < 7; i++) {
-                const date = new Date(today);
-                date.setDate(today.getDate() - i);
-                const dateString = date.toISOString().split('T')[0];
-                
-                // Add 1 to 3 jobs per day
-                for (let j = 0; j < Math.floor(Math.random() * 3) + 1; j++) {
-                    const client = clients[Math.floor(Math.random() * 10) + 1];
-                    schedule.push({
-                        id: nextJobId++,
-                        date: dateString,
-                        clientId: client.id,
-                        clientName: client.name,
-                        phone: client.phone,
-                        price: Math.floor(Math.random() * 100) + 50,
-                        time: `${Math.floor(Math.random() * 8) + 9}:00`,
-                        tasks: "Standard Cleaning",
-                        address: client.address,
-                        isPaid: Math.random() > 0.5,
-                        paymentMethod: 'Venmo',
-                        paymentDate: new Date().toLocaleDateString(),
-                        status: 'active'
-                    });
-                }
-            }
-
-            // Generate timesheet data for 2 employees for the past 2 weeks
-            [2, 3].forEach(employeeId => {
-                for (let i = 0; i < 14; i++) {
-                    const date = new Date(today);
-                    date.setDate(today.getDate() - i);
-                    // Skip weekends
-                    if (date.getDay() === 0 || date.getDay() === 6) continue;
-                    
-                    const clockIn = new Date(date);
-                    clockIn.setHours(9, Math.floor(Math.random() * 15), 0, 0); // Start between 9:00 - 9:14
-
-                    const clockOut = new Date(date);
-                    clockOut.setHours(17, Math.floor(Math.random() * 15), 0, 0); // End between 17:00 - 17:14
-
-                    timesheets[employeeId].push({
-                        clockIn: clockIn.toISOString(),
-                        clockOut: clockOut.toISOString()
-                    });
-                }
-            });
+            saveState(); // Save initial empty state with admin user
         }
     }
 
@@ -1782,3 +1727,5 @@ document.addEventListener('DOMContentLoaded', () => {
     initData();
     loadSettings();
 });
+
+
